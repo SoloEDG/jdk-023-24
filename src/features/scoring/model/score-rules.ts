@@ -54,6 +54,11 @@ export function applyScore(doc: PinballDocument, events: ContactEvent[]): Contac
   for (const event of events) {
     const mechanism = findMechanism(doc, event.id)
     if (mechanism && mechanism.cooldownMs > 0) continue
+    if (event.id === BodyId.hole) {
+      // 进洞不在入洞瞬间计分，等踢出时按当时倍率结算（见 awardHole）。
+      awarded.push(event)
+      continue
+    }
     const points = pointsFor(event.id, doc.chain.multiplier)
     if (points === null) continue
     doc.score += points
@@ -62,4 +67,14 @@ export function applyScore(doc: PinballDocument, events: ContactEvent[]): Contac
     awarded.push(event)
   }
   return awarded
+}
+
+export function awardHole(doc: PinballDocument, offer: number): number {
+  const base = BASE_POINTS[BodyId.hole] ?? 0
+  const points = Math.round(base * offer * doc.chain.multiplier)
+  doc.score += points
+  remember(doc, BodyId.hole, points)
+  const mechanism = findMechanism(doc, BodyId.hole)
+  if (mechanism) mechanism.cooldownMs = cooldownFor(mechanism.kind)
+  return points
 }

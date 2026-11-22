@@ -26,6 +26,8 @@ export interface BallState {
   rideMs: number
   rideDur: number
   idleMs: number
+  holeOffer: number
+  holeLatch: boolean
 }
 
 export interface FlipperState {
@@ -158,6 +160,8 @@ export function createDocument(): PinballDocument {
       rideMs: 0,
       rideDur: 1,
       idleMs: 0,
+      holeOffer: 1,
+      holeLatch: false,
     },
     flippers: {
       left: { angle: 0.62, omega: 0, held: false },

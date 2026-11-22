@@ -22,6 +22,7 @@ const phaseLabel = computed(() => {
   if (props.doc.phase === 'gameover') return '结束'
   if (props.doc.phase === 'ready') return '待发'
   if (props.doc.ball.held === 'plunger') return '回槽'
+  if (props.doc.ball.held === 'hole') return '洞中'
   return '游玩'
 })
 </script>

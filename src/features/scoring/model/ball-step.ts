@@ -1,14 +1,19 @@
 import { dedupeContacts, type ContactEvent, type RideFns, type RideSample } from '@/shared/contacts'
-import { findMechanism, type PinballDocument } from '@/shared/document'
+import { findMechanism, flashNote, type PinballDocument } from '@/shared/document'
 import { speedOf } from '@/shared/geometry'
 import { BodyId } from '@/shared/ids'
 import type { Solid } from '@/shared/solids'
 import { resolveBall } from '@/features/scoring/lib/collide'
+import { awardHole } from '@/features/scoring/model/score-rules'
 
 const MAX_SPEED = 1750
 const SCOOP_MS = 560
 const RAMP_MS = 920
-const HOLE_MS = 460
+const HOLE_OFFER_MAX = 5
+const HOLE_OFFER_MIN = 1
+const HOLE_DECAY_MS = 3500
+const HOLE_KICK_VX = -60
+const HOLE_KICK_VY = -700
 
 function cooled(doc: PinballDocument, id: string): boolean {
   const mechanism = findMechanism(doc, id)
@@ -54,14 +59,32 @@ function stepRide(doc: PinballDocument, dtMs: number, sample: (progress: number)
   return []
 }
 
-function stepHole(doc: PinballDocument, dtMs: number): ContactEvent[] {
-  doc.ball.holdMs -= dtMs
+function holeOfferNow(doc: PinballDocument): number {
+  const remain = Math.min(1, Math.max(0, doc.ball.holdMs / HOLE_DECAY_MS))
+  return HOLE_OFFER_MIN + (HOLE_OFFER_MAX - HOLE_OFFER_MIN) * remain
+}
+
+function kickFromHole(doc: PinballDocument): void {
+  awardHole(doc, doc.ball.holeOffer)
+  doc.ball.held = 'none'
+  doc.ball.holdMs = 0
+  doc.ball.holeLatch = false
+  doc.ball.vx = HOLE_KICK_VX
+  doc.ball.vy = HOLE_KICK_VY
+}
+
+function stepHole(doc: PinballDocument, dtMs: number, launchHeld: boolean): ContactEvent[] {
   doc.ball.vx = 0
   doc.ball.vy = 0
+  if (!launchHeld) doc.ball.holeLatch = false
+  if (launchHeld && !doc.ball.holeLatch) {
+    kickFromHole(doc)
+    return []
+  }
+  doc.ball.holdMs = Math.max(0, doc.ball.holdMs - dtMs)
+  doc.ball.holeOffer = holeOfferNow(doc)
   if (doc.ball.holdMs > 0) return []
-  doc.ball.held = 'none'
-  doc.ball.vx = -60
-  doc.ball.vy = -700
+  kickFromHole(doc)
   return []
 }
 
@@ -75,11 +98,14 @@ function capture(doc: PinballDocument, events: ContactEvent[]): void {
     }
     if (event.id === BodyId.hole) {
       doc.ball.held = 'hole'
-      doc.ball.holdMs = HOLE_MS
+      doc.ball.holdMs = HOLE_DECAY_MS
+      doc.ball.holeOffer = HOLE_OFFER_MAX
+      doc.ball.holeLatch = true
       doc.ball.x = event.x
       doc.ball.y = event.y
       doc.ball.vx = 0
       doc.ball.vy = 0
+      flashNote(doc, '球进洞，按住发射踢出')
       return
     }
     if (event.id === BodyId.ramp && doc.gates.rampOpen) {
@@ -111,8 +137,14 @@ function markDrainOrSeat(doc: PinballDocument): void {
   }
 }
 
-export function advanceBall(doc: PinballDocument, solids: Solid[], dtMs: number, rides: RideFns): ContactEvent[] {
-  if (doc.ball.held === 'hole') return stepHole(doc, dtMs)
+export function advanceBall(
+  doc: PinballDocument,
+  solids: Solid[],
+  dtMs: number,
+  rides: RideFns,
+  launchHeld: boolean,
+): ContactEvent[] {
+  if (doc.ball.held === 'hole') return stepHole(doc, dtMs, launchHeld)
   if (doc.ball.held === 'ramp') return stepRide(doc, dtMs, rides.ramp)
   if (doc.ball.held === 'scoop') return stepRide(doc, dtMs, rides.scoop)
   if (doc.ball.held === 'plunger') return []

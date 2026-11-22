@@ -102,6 +102,8 @@ export function stickPlunger(doc: PinballDocument): void {
   doc.ball.vy = 0
   doc.ball.rideMs = 0
   doc.ball.holdMs = 0
+  doc.ball.holeOffer = 1
+  doc.ball.holeLatch = false
 }
 
 function follow(path: Vec[], progress: number, releaseSpeed: number): RideSample {

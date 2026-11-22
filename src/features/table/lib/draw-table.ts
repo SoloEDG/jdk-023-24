@@ -137,13 +137,19 @@ function gateOf(ctx: CanvasRenderingContext2D, doc: PinballDocument): void {
 
 function holeOf(ctx: CanvasRenderingContext2D, doc: PinballDocument): void {
   const state = doc.mechanisms.find((item) => item.id === hole.id)
+  const parked = doc.ball.held === 'hole'
   ctx.beginPath()
   ctx.fillStyle = '#08110f'
   ctx.arc(hole.x, hole.y, hole.r, 0, Math.PI * 2)
   ctx.fill()
-  ctx.strokeStyle = state?.lamp ? '#ffd56a' : '#d7a441'
+  ctx.strokeStyle = parked || state?.lamp ? '#ffd56a' : '#d7a441'
   ctx.lineWidth = 3
   ctx.stroke()
+  if (!parked) return
+  ctx.fillStyle = '#ffd56a'
+  ctx.font = 'bold 15px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText(`×${doc.ball.holeOffer.toFixed(1)}`, hole.x, hole.y - hole.r - 10)
 }
 
 function scoopOf(ctx: CanvasRenderingContext2D): void {

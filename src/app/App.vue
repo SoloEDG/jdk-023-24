@@ -24,7 +24,12 @@ onBeforeUnmount(() => {
 })
 
 const canPause = computed(() => doc.phase === 'ready' || doc.phase === 'playing' || doc.phase === 'paused')
-const plungerReady = computed(() => doc.ball.held === 'plunger' && doc.phase !== 'paused' && doc.phase !== 'gameover')
+const plungerReady = computed(
+  () =>
+    (doc.ball.held === 'plunger' || doc.ball.held === 'hole') &&
+    doc.phase !== 'paused' &&
+    doc.phase !== 'gameover',
+)
 
 function onPlunger(down: boolean): void {
   if (down) input.setPlunger(true)
@@ -50,7 +55,7 @@ function onPlunger(down: boolean): void {
         <div class="table-wrap">
           <TableView :doc="doc" />
           <p class="how">
-            A 与左 Shift 是左挡板，D 与右 Shift 是右挡板。按住空格蓄力，松开把球打上发射槽。Q、E 轻推，三次会倾斜。P 暂停。
+            A 与左 Shift 是左挡板，D 与右 Shift 是右挡板。按住空格蓄力，松开把球打上发射槽。球进洞后洞口倍率一路走低，再次按住空格立刻踢出并按当时倍率计分。Q、E 轻推，三次会倾斜。P 暂停。
           </p>
         </div>
         <aside class="side">

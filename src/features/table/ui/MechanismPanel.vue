@@ -14,7 +14,10 @@ function status(item: MechanismState): string {
   if (item.kind === 'lane') return item.lit ? '已点亮' : '未点亮'
   if (item.kind === 'bumper') return `灯 ${item.lamp + 1}`
   if (item.kind === 'spinner') return item.spinOmega > 1 ? '在转' : '停着'
-  if (item.kind === 'hole') return item.lamp ? '刚吞球' : '空着'
+  if (item.kind === 'hole') {
+    if (props.doc.ball.held === 'hole') return `含球 ×${props.doc.ball.holeOffer.toFixed(1)}，按住发射踢出`
+    return item.lamp ? '刚吞球' : '空着'
+  }
   if (item.kind === 'ramp') return props.doc.gates.rampOpen ? '可进' : '被闸住'
   return item.cooldownMs > 0 ? '冷却' : '待命'
 }

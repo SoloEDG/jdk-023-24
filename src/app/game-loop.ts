@@ -28,7 +28,7 @@ export function runFrame(doc: PinballDocument, input: FrameInput, dtMs: number):
   tickBonus(doc, dtMs)
   const solids = syncTable(doc, dtMs)
   if (doc.ball.held !== 'plunger') {
-    const events = simulateBall(doc, solids, dtMs, { ramp: sampleRamp, scoop: sampleScoop })
+    const events = simulateBall(doc, solids, dtMs, { ramp: sampleRamp, scoop: sampleScoop }, input.plunger)
     consumeContacts(doc, events)
     absorbZones(doc, events)
     publishGates(doc)
